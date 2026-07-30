@@ -1,0 +1,28 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "✅ Device Validation: Success",
+      "weight": "Bolder",
+      "size": "Large",
+      "color": "Good"
+    },
+    {
+      "type": "FactSet",
+      "facts": [
+        { "title": "Hostname:", "value": "${hostname}${cloud_pc_location}" },
+        { "title": "Model:", "value": "${model}" },
+        { "title": "Device Owner:", "value": "${deviceOwner}" },
+        { "title": "Domain:", "value": "${domain}" },
+        { "title": "OS Version:", "value": "${os_version}" },
+        { "title": "Build Date:", "value": "${build_date}" },
+        { "title": "Last Boot Time:", "value": "${last_boot_time}" },
+        { "title": "Test Date:", "value": "${run_timestamp}" },
+        { "title": "Tests Succeeded:", "value": "${success_count} / ${tests_performed}" }
+      ]
+    }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+}

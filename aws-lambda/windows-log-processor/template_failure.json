@@ -1,0 +1,53 @@
+{
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.3",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "🔍 Device Validation: Error",
+            "weight": "Bolder",
+            "size": "Large",
+            "color": "Attention"
+        },
+        {
+            "type": "FactSet",
+            "facts": [
+                { "title": "Hostname:", "value": "${hostname}${cloud_pc_location}" },
+                { "title": "Model:", "value": "${model}" },
+                { "title": "Device Owner:", "value": "${device_owner}" },
+                { "title": "Domain:", "value": "${domain}" },
+                { "title": "OS Version:", "value": "${os_version}" },
+                { "title": "Build Date:", "value": "${build_date}" },
+                { "title": "Last Boot Time:", "value": "${last_boot_time}" },
+                { "title": "Test Date:", "value": "${run_timestamp}" },
+                { "title": "Success Count:", "value": "${success_count}" },
+                { "title": "Error Count:", "value": "${error_count}" }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "text": "${ERROR_ONLY}",
+            "wrap": true,
+            "spacing": "Medium"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.ShowCard",
+            "title": "Suggest Fix (powered by AI)",
+            "card": {
+                "type": "AdaptiveCard",
+                "body": [
+                    {
+                        "type": "TextBlock",
+                        "text": "${TROUBLESHOOT_SUGGESTIONS}",
+                        "wrap": true,
+                        "color": "Good"
+                    }
+                ],
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+            }
+        }
+    ]
+}
