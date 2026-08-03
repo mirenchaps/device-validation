@@ -252,8 +252,7 @@ def lambda_handler(event, context):
                 ),
             }
         secrets = get_secrets_from_json(secrets_path)
-        webex_room_id = secrets.get("WEBEX_ROOM_ID")
-        webex_bot_token = secrets.get("WEBEX_BOT_TOKEN")
+        webex_bot_tokens = secrets.get("WEBEX_BOT_TOKENS", {})
         client_id = secrets.get("OAUTH_CLIENT_ID")
         client_secret = secrets.get("OAUTH_CLIENT_SECRET")
         app_key = secrets.get("AI_APP_KEY")
@@ -266,6 +265,8 @@ def lambda_handler(event, context):
                 "Failed to retrieve required credentials from Secrets Manager"
             ),
         }
+
+    room_map = json.loads(os.getenv("BUCKET_ROOM_MAP", "{}"))
 
     if (
         "Records" not in event
@@ -282,6 +283,18 @@ def lambda_handler(event, context):
     bucket_name = s3_event["bucket"]["name"]
     encoded_key = s3_event["object"]["key"]
     object_key = urllib.parse.unquote_plus(encoded_key)
+
+    webex_room_id = room_map.get(bucket_name)
+    if not webex_room_id:
+        print(
+            f"ERROR: No Webex room configured for bucket '{bucket_name}'. Skipping send."
+        )
+
+    webex_bot_token = webex_bot_tokens.get(bucket_name)
+    if not webex_bot_token:
+        print(
+            f"ERROR: No Webex bot token configured for bucket '{bucket_name}'. Skipping send."
+        )
 
     print(f"Processing S3 object: s3://{bucket_name}/{object_key}")
 
@@ -466,7 +479,7 @@ def lambda_handler(event, context):
                 )
                 final_card_str = card_json_str
 
-        if final_card_str:
+        if final_card_str and webex_room_id and webex_bot_token:
             send_webex_adaptive_card(webex_room_id, webex_bot_token, final_card_str)
 
         print("Processing complete. S3 object will be expired by lifecycle policy.")
