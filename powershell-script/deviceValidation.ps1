@@ -214,6 +214,36 @@ if ([string]::IsNullOrWhiteSpace($validationEnvironment)) {
     $validationEnvironment = "prod"
 }
 
+# Determine the environment from the device's domain join state. This must run
+# on every execution, including retry runs, because $validationEnvironment
+# selects the upload endpoint the log is sent to. Keeping it inside the
+# non-retry block below would route retry-run uploads to the default (prod).
+add-info "Checking device domain status..."
+try {
+    $dsregStatus = dsregcmd /status
+    $domainName = "Unknown"
+
+    if ($dsregStatus -match "AzureAdJoined\s+:\s+YES") {
+        $tenantNameLine = $dsregStatus | Where-Object { $_ -match "TenantName" }
+        if ($tenantNameLine) {
+            $domainName = ($tenantNameLine -split ':', 2)[1].Trim()
+            logwrite "Domain: $domainName"
+        }
+    }
+    if ($domainName -eq "CiscoITStage") {
+        $validationEnvironment = "stage"
+    }
+    elseif ($domainName -eq "Cisco") {
+        $validationEnvironment = "prod"
+    }
+
+    $certificateExpiryDays = if ($validationEnvironment -match "stage|staging|test") { 7 } else { 30 }
+}
+catch {
+    logwrite "Failed to get domain info using dsregcmd. Error: $($_.Exception.Message)"
+    logwrite "Domain: Unknown"
+}
+
 # Only run validation tests if this is not a retry run
 if (-not $isRetryRun) {
 
@@ -393,32 +423,6 @@ if (-not $isRetryRun) {
     }
     catch {
         LogWrite "Last Boot Time: Unable to retrieve"
-    }
-
-    add-info "Checking device domain status..."
-    try {
-        $dsregStatus = dsregcmd /status
-        $domainName = "Unknown"
-
-        if ($dsregStatus -match "AzureAdJoined\s+:\s+YES") {
-            $tenantNameLine = $dsregStatus | Where-Object { $_ -match "TenantName" }
-            if ($tenantNameLine) {
-                $domainName = ($tenantNameLine -split ':', 2)[1].Trim()
-                logwrite "Domain: $domainName"
-            }
-        }
-        if ($domainName -eq "CiscoITStage") {
-            $validationEnvironment = "stage"
-        }
-        elseif ($domainName -eq "Cisco") {
-            $validationEnvironment = "prod"
-        }
-
-        $certificateExpiryDays = if ($validationEnvironment -match "stage|staging|test") { 7 } else { 30 }
-    }
-    catch {
-        logwrite "Failed to get domain info using dsregcmd. Error: $($_.Exception.Message)"
-        logwrite "Domain: Unknown"
     }
 
     #  Start test steps
@@ -1038,7 +1042,7 @@ if (-not $isRetryRun) {
 #Upload to S3
 
 $deviceName = $env:COMPUTERNAME
-$apiUrl = $env:DEVICE_VALIDATION_API_URL
+$apiUrl = "$($env:DEVICE_VALIDATION_API_URL)?device=$deviceName&os=windows&env=$validationEnvironment"
 $clientId = $env:DEVICE_VALIDATION_CLIENT_ID
 $clientSecret = $env:DEVICE_VALIDATION_CLIENT_SECRET
 $tokenEndpoint = $env:DEVICE_VALIDATION_TOKEN_ENDPOINT

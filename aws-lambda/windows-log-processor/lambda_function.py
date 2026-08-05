@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 # Initialize AWS clients outside the handler for performance
 s3_client = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
-failure_table = dynamodb.Table("DeviceFailureLogs")  # type: ignore[attr-defined]
+failure_table = dynamodb.Table(os.environ["FAILURE_TABLE_NAME"])  # type: ignore[attr-defined]
 secrets_client = boto3.client("secretsmanager")
 
 
